@@ -11,6 +11,17 @@ type ServerConfig struct {
 	Name       string                 `yaml:"name"`
 	Config     map[string]interface{} `yaml:"config,omitempty"`
 	AllowTools []string               `yaml:"allowTools,omitempty"`
+	Security   []SecurityScheme       `yaml:"security,omitempty"`
+}
+
+// SecurityScheme defines a security scheme that can be used by the tools.
+type SecurityScheme struct {
+	ID                string `yaml:"id"`
+	Type              string `yaml:"type"`             // e.g., "http", "apiKey", "oauth2", "openIdConnect"
+	Scheme            string `yaml:"scheme,omitempty"` // e.g., "basic", "bearer" for "http" type
+	In                string `yaml:"in,omitempty"`     // e.g., "header", "query", "cookie" for "apiKey" type
+	Name              string `yaml:"name,omitempty"`   // Name of the header, query parameter or cookie for "apiKey" type
+	DefaultCredential string `yaml:"defaultCredential,omitempty"`
 }
 
 // Tool represents an MCP tool configuration
@@ -37,13 +48,19 @@ type Arg struct {
 
 // RequestTemplate represents the MCP request template
 type RequestTemplate struct {
-	URL            string   `yaml:"url"`
-	Method         string   `yaml:"method"`
-	Headers        []Header `yaml:"headers,omitempty"`
-	Body           string   `yaml:"body,omitempty"`
-	ArgsToJsonBody bool     `yaml:"argsToJsonBody,omitempty"`
-	ArgsToUrlParam bool     `yaml:"argsToUrlParam,omitempty"`
-	ArgsToFormBody bool     `yaml:"argsToFormBody,omitempty"`
+	URL            string                    `yaml:"url"`
+	Method         string                    `yaml:"method"`
+	Headers        []Header                  `yaml:"headers,omitempty"`
+	Body           string                    `yaml:"body,omitempty"`
+	ArgsToJsonBody bool                      `yaml:"argsToJsonBody,omitempty"`
+	ArgsToUrlParam bool                      `yaml:"argsToUrlParam,omitempty"`
+	ArgsToFormBody bool                      `yaml:"argsToFormBody,omitempty"`
+	Security       []ToolSecurityRequirement `yaml:"security,omitempty"`
+}
+
+// ToolSecurityRequirement specifies a security scheme requirement for a tool.
+type ToolSecurityRequirement struct {
+	ID string `yaml:"id"` // References a SecurityScheme ID defined in ServerConfig.Security
 }
 
 // Header represents an HTTP header
