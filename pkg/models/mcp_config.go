@@ -8,10 +8,10 @@ type MCPConfig struct {
 
 // ServerConfig represents the MCP server configuration
 type ServerConfig struct {
-	Name       string                 `yaml:"name"`
-	Config     map[string]interface{} `yaml:"config,omitempty"`
-	AllowTools []string               `yaml:"allowTools,omitempty"`
-	Security   []SecurityScheme       `yaml:"security,omitempty"`
+	Name            string                 `yaml:"name"`
+	Config          map[string]interface{} `yaml:"config,omitempty"`
+	AllowTools      []string               `yaml:"allowTools,omitempty"`
+	SecuritySchemes []SecurityScheme       `yaml:"securitySchemes,omitempty"`
 }
 
 // SecurityScheme defines a security scheme that can be used by the tools.
@@ -60,7 +60,7 @@ type RequestTemplate struct {
 
 // ToolSecurityRequirement specifies a security scheme requirement for a tool.
 type ToolSecurityRequirement struct {
-	ID string `yaml:"id"` // References a SecurityScheme ID defined in ServerConfig.Security
+	ID string `yaml:"id"` // References a SecurityScheme ID defined in ServerConfig.SecuritySchemes
 }
 
 // Header represents an HTTP header
