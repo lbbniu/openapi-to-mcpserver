@@ -333,3 +333,95 @@ openapi-to-mcp --input api-spec.json --output mcp-server.yaml --server-name my-s
 ```
 
 The template values like `{{.config.apiKey}}` or `"{{uuidv4}}"` are not processed by the tool but are preserved in the output for use by the MCP server at runtime.
+
+## Security Scheme Conversion
+
+The tool now supports the conversion of security schemes defined in your OpenAPI specification.
+
+### Server-Level Security Schemes
+
+Security schemes defined in the `components.securitySchemes` section of your OpenAPI document are converted into a list under `server.securitySchemes` in the generated MCP configuration.
+
+**Example OpenAPI Snippet (`components.securitySchemes`):**
+```json
+{
+  "components": {
+    "securitySchemes": {
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-KEY"
+      }
+    }
+  }
+}
+```
+
+**Corresponding MCP YAML Output (`server.securitySchemes`):**
+```yaml
+server:
+  name: your-server-name
+  securitySchemes:
+    - id: ApiKeyAuth # Note: Schemes are sorted by ID in the output
+      type: apiKey
+      in: header
+      name: X-API-KEY
+    - id: BasicAuth
+      type: http
+      scheme: basic
+  # ... other server config ...
+```
+The `defaultCredential` field within a security scheme is an MCP-specific extension and is not derived from the OpenAPI specification. You can set it using the `--template` feature if needed.
+
+### Tool-Level Security Requirements
+
+Security requirements defined at the operation level in your OpenAPI document (using the `security` keyword) are converted into a list under `requestTemplate.security` for the corresponding tool. Each entry in this list will reference the `id` of a security scheme defined in `server.securitySchemes`.
+
+**Example OpenAPI Snippet (Operation with security):**
+```json
+{
+  "paths": {
+    "/protected_resource": {
+      "get": {
+        "summary": "Access a protected resource",
+        "operationId": "getProtectedResource",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      }
+    }
+  }
+}
+```
+
+**Corresponding MCP YAML Output (Tool's `requestTemplate.security`):**
+```yaml
+tools:
+  - name: getProtectedResource
+    description: Access a protected resource
+    # ... args ...
+    requestTemplate:
+      url: /protected_resource # Actual URL depends on your server config in OpenAPI
+      method: GET
+      security:
+        - id: ApiKeyAuth
+    # ... responseTemplate ...
+```
+If an operation specifies multiple security schemes (e.g., BearerAuth OR ApiKeyAuth), all will be listed under `requestTemplate.security`. The MCP server runtime would then handle the logic of which scheme to use.
+
+### Template Overrides for Security
+
+You can use the `--template` option to:
+- Add new security schemes to `server.securitySchemes`.
+- Override existing security schemes (e.g., to add `defaultCredential`).
+- Override or set `security` requirements for all tools via the `tools.requestTemplate.security` path in your template file.
+If the template defines `server.securitySchemes` or `tools.requestTemplate.security`, these will replace any schemes/requirements derived from the OpenAPI specification.

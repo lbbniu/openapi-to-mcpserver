@@ -58,6 +58,12 @@ func TestEndToEndConversion(t *testing.T) {
 			serverName:     "petstore",
 			templatePath:   "../../test/template.yaml",
 		},
+		{
+			name:           "Security Schemes API",
+			inputFile:      "../../test/security-test.json",
+			expectedOutput: "../../test/expected-security-test-mcp.yaml",
+			serverName:     "openapi-server", // Matches the default or can be specified if different
+		},
 	}
 
 	for _, tc := range testCases {

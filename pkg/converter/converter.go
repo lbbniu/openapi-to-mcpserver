@@ -43,10 +43,34 @@ func (c *Converter) Convert() (*models.MCPConfig, error) {
 	// Create the MCP configuration
 	config := &models.MCPConfig{
 		Server: models.ServerConfig{
-			Name:   c.options.ServerName,
-			Config: c.options.ServerConfig,
+			Name:            c.options.ServerName,
+			Config:          c.options.ServerConfig,
+			SecuritySchemes: []models.SecurityScheme{},
 		},
 		Tools: []models.Tool{},
+	}
+
+	// Process security schemes
+	if c.parser.GetDocument().Components != nil && c.parser.GetDocument().Components.SecuritySchemes != nil {
+		for name, schemeRef := range c.parser.GetDocument().Components.SecuritySchemes {
+			if schemeRef != nil && schemeRef.Value != nil {
+				scheme := schemeRef.Value
+				mcpScheme := models.SecurityScheme{
+					ID:     name,
+					Type:   scheme.Type,
+					Scheme: scheme.Scheme,
+					In:     scheme.In,
+					Name:   scheme.Name,
+					// DefaultCredential is not directly available in OpenAPI SecurityScheme,
+					// it's an extension for MCP. User can set it via template or manually.
+				}
+				config.Server.SecuritySchemes = append(config.Server.SecuritySchemes, mcpScheme)
+			}
+		}
+		// Sort security schemes by ID for consistent output
+		sort.Slice(config.Server.SecuritySchemes, func(i, j int) bool {
+			return config.Server.SecuritySchemes[i].ID < config.Server.SecuritySchemes[j].ID
+		})
 	}
 
 	// Process each path and operation
@@ -101,6 +125,11 @@ func (c *Converter) applyTemplate(config *models.MCPConfig) error {
 			config.Server.Config[k] = v
 		}
 	}
+	// Apply server security schemes
+	// If template provides security schemes, they override existing ones.
+	if len(templateConfig.Server.SecuritySchemes) > 0 {
+		config.Server.SecuritySchemes = templateConfig.Server.SecuritySchemes
+	}
 
 	// Apply tool template to all tools
 	if templateConfig.Tools.RequestTemplate != nil || templateConfig.Tools.ResponseTemplate != nil {
@@ -127,6 +156,11 @@ func (c *Converter) applyTemplate(config *models.MCPConfig) error {
 				}
 				if templateConfig.Tools.RequestTemplate.ArgsToFormBody {
 					config.Tools[i].RequestTemplate.ArgsToFormBody = true
+				}
+				// Apply request template security
+				// If template provides security requirements, they override existing ones for the tool.
+				if len(templateConfig.Tools.RequestTemplate.Security) > 0 {
+					config.Tools[i].RequestTemplate.Security = templateConfig.Tools.RequestTemplate.Security
 				}
 			}
 
@@ -375,9 +409,24 @@ func (c *Converter) createRequestTemplate(path, method string, operation *openap
 
 	// Create the request template
 	template := &models.RequestTemplate{
-		URL:     serverURL + path,
-		Method:  strings.ToUpper(method),
-		Headers: []models.Header{},
+		URL:      serverURL + path,
+		Method:   strings.ToUpper(method),
+		Headers:  []models.Header{},
+		Security: []models.ToolSecurityRequirement{},
+	}
+
+	// Process operation-level security requirements
+	if operation.Security != nil {
+		for _, securityRequirement := range *operation.Security {
+			for schemeName := range securityRequirement {
+				// In MCP, we just reference the scheme by ID.
+				// The actual application of security (e.g., adding headers)
+				// would be handled by the MCP server runtime based on this ID.
+				template.Security = append(template.Security, models.ToolSecurityRequirement{
+					ID: schemeName,
+				})
+			}
+		}
 	}
 
 	// Add Content-Type header based on request body content type
