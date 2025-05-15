@@ -158,8 +158,9 @@ func (c *Converter) applyTemplate(config *models.MCPConfig) error {
 					config.Tools[i].RequestTemplate.ArgsToFormBody = true
 				}
 				// Apply request template security
-				config.Tools[i].RequestTemplate.Security = templateConfig.Tools.RequestTemplate.Security
-
+				if templateConfig.Tools.RequestTemplate.Security != nil {
+					config.Tools[i].RequestTemplate.Security = templateConfig.Tools.RequestTemplate.Security
+				}
 			}
 
 			// Apply response template
@@ -407,10 +408,9 @@ func (c *Converter) createRequestTemplate(path, method string, operation *openap
 
 	// Create the request template
 	template := &models.RequestTemplate{
-		URL:      serverURL + path,
-		Method:   strings.ToUpper(method),
-		Headers:  []models.Header{},
-		Security: models.ToolSecurityRequirement{},
+		URL:     serverURL + path,
+		Method:  strings.ToUpper(method),
+		Headers: []models.Header{},
 	}
 
 	// Process operation-level security requirements
@@ -420,7 +420,7 @@ func (c *Converter) createRequestTemplate(path, method string, operation *openap
 				// In MCP, we just reference the scheme by ID.
 				// The actual application of security (e.g., adding headers)
 				// would be handled by the MCP server runtime based on this ID.
-				template.Security = models.ToolSecurityRequirement{
+				template.Security = &models.ToolSecurityRequirement{
 					ID: schemeName,
 				}
 				break
