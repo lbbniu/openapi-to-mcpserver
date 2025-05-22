@@ -132,7 +132,7 @@ func (c *Converter) applyTemplate(config *models.MCPConfig) error {
 	}
 
 	// Apply tool template to all tools
-	if templateConfig.Tools.RequestTemplate != nil || templateConfig.Tools.ResponseTemplate != nil {
+	if templateConfig.Tools.RequestTemplate != nil || templateConfig.Tools.ResponseTemplate != nil || templateConfig.Tools.Security != nil {
 		for i := range config.Tools {
 			// Apply request template
 			if templateConfig.Tools.RequestTemplate != nil {
@@ -174,6 +174,11 @@ func (c *Converter) applyTemplate(config *models.MCPConfig) error {
 				if templateConfig.Tools.ResponseTemplate.AppendBody != "" {
 					config.Tools[i].ResponseTemplate.AppendBody = templateConfig.Tools.ResponseTemplate.AppendBody
 				}
+			}
+
+			// Apply security
+			if templateConfig.Tools.Security != nil {
+				config.Tools[i].Security = templateConfig.Tools.Security
 			}
 		}
 	}
