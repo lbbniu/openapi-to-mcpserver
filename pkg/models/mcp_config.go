@@ -26,11 +26,12 @@ type SecurityScheme struct {
 
 // Tool represents an MCP tool configuration
 type Tool struct {
-	Name             string           `yaml:"name"`
-	Description      string           `yaml:"description"`
-	Args             []Arg            `yaml:"args"`
-	RequestTemplate  RequestTemplate  `yaml:"requestTemplate"`
-	ResponseTemplate ResponseTemplate `yaml:"responseTemplate"`
+	Name             string                   `yaml:"name"`
+	Description      string                   `yaml:"description"`
+	Args             []Arg                    `yaml:"args"`
+	RequestTemplate  RequestTemplate          `yaml:"requestTemplate"`
+	ResponseTemplate ResponseTemplate         `yaml:"responseTemplate"`
+	Security         *ToolSecurityRequirement `yaml:"security,omitempty"`
 }
 
 // Arg represents an MCP tool argument
@@ -60,7 +61,8 @@ type RequestTemplate struct {
 
 // ToolSecurityRequirement specifies a security scheme requirement for a tool.
 type ToolSecurityRequirement struct {
-	ID string `yaml:"id"` // References a SecurityScheme ID defined in ServerConfig.SecuritySchemes
+	ID          string `yaml:"id"`                    // References a SecurityScheme ID defined in ServerConfig.SecuritySchemes
+	Passthrough bool   `yaml:"passthrough,omitempty"` // Whether to pass through the security credentials
 }
 
 // Header represents an HTTP header
@@ -86,8 +88,9 @@ type ConvertOptions struct {
 
 // ToolTemplate represents a template for applying to all tools
 type ToolTemplate struct {
-	RequestTemplate  *RequestTemplate  `yaml:"requestTemplate,omitempty"`
-	ResponseTemplate *ResponseTemplate `yaml:"responseTemplate,omitempty"`
+	RequestTemplate  *RequestTemplate         `yaml:"requestTemplate,omitempty"`
+	ResponseTemplate *ResponseTemplate        `yaml:"responseTemplate,omitempty"`
+	Security         *ToolSecurityRequirement `yaml:"security,omitempty"`
 }
 
 // MCPConfigTemplate represents a template for patching the generated config
