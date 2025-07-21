@@ -3,13 +3,15 @@ package converter
 import (
 	"fmt"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"gopkg.in/yaml.v3"
+
 	"github.com/higress-group/openapi-to-mcpserver/pkg/models"
 	"github.com/higress-group/openapi-to-mcpserver/pkg/parser"
-	"gopkg.in/yaml.v3"
 )
 
 // Converter represents an OpenAPI to MCP converter
@@ -25,7 +27,7 @@ func NewConverter(parser *parser.Parser, options models.ConvertOptions) *Convert
 		options.ServerName = "openapi-server"
 	}
 	if options.ServerConfig == nil {
-		options.ServerConfig = make(map[string]interface{})
+		options.ServerConfig = make(map[string]any)
 	}
 
 	return &Converter{
@@ -119,7 +121,7 @@ func (c *Converter) applyTemplate(config *models.MCPConfig) error {
 	// Apply server config
 	if templateConfig.Server.Config != nil {
 		if config.Server.Config == nil {
-			config.Server.Config = make(map[string]interface{})
+			config.Server.Config = make(map[string]any)
 		}
 		for k, v := range templateConfig.Server.Config {
 			config.Server.Config[k] = v
@@ -300,21 +302,21 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 
 			// Handle array type
 			if schema.Type == "array" && schema.Items != nil && schema.Items.Value != nil {
-				arg.Items = map[string]interface{}{
+				arg.Items = map[string]any{
 					"type": schema.Items.Value.Type,
 				}
 			}
 
 			// Handle object type
 			if schema.Type == "object" && len(schema.Properties) > 0 {
-				arg.Properties = make(map[string]interface{})
+				arg.Properties = make(map[string]any)
 				for propName, propRef := range schema.Properties {
 					if propRef.Value != nil {
-						arg.Properties[propName] = map[string]interface{}{
+						arg.Properties[propName] = map[string]any{
 							"type": propRef.Value.Type,
 						}
 						if propRef.Value.Description != "" {
-							arg.Properties[propName].(map[string]interface{})["description"] = propRef.Value.Description
+							arg.Properties[propName].(map[string]any)["description"] = propRef.Value.Description
 						}
 					}
 				}
@@ -371,22 +373,32 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 
 					// Handle array type
 					if propRef.Value.Type == "array" && propRef.Value.Items != nil && propRef.Value.Items.Value != nil {
-						arg.Items = map[string]interface{}{
-							"type": propRef.Value.Items.Value.Type,
+						arg.Items = map[string]any{
+							"type":        propRef.Value.Items.Value.Type,
+							"description": propRef.Value.Items.Value.Description,
+						}
+						if propRef.Value.Items.Value.MinItems > 0 {
+							arg.Items["minItems"] = propRef.Value.Items.Value.MinItems
+						}
+						if propRef.Value.Items.Value.Type == "object" && propRef.Value.Items.Value.Properties != nil {
+							arg.Items["properties"] = propRef.Value.Items.Value.Properties
 						}
 					}
-
 					// Handle object type
 					if propRef.Value.Type == "object" && len(propRef.Value.Properties) > 0 {
-						arg.Properties = make(map[string]interface{})
+						arg.Properties = make(map[string]any)
 						for subPropName, subPropRef := range propRef.Value.Properties {
 							if subPropRef.Value != nil {
-								arg.Properties[subPropName] = map[string]interface{}{
-									"type": subPropRef.Value.Type,
+								subProp := make(map[string]any)
+								subProp["type"] = subPropRef.Value.Type
+								if subPropRef.Value.Default != nil {
+									subProp["default"] = subPropRef.Value.Default
 								}
-								if subPropRef.Value.Description != "" {
-									arg.Properties[subPropName].(map[string]interface{})["description"] = subPropRef.Value.Description
+								subProp["description"] = subPropRef.Value.Description
+								if subPropRef.Value.Enum != nil {
+									subProp["enum"] = subPropRef.Value.Enum
 								}
+								arg.Properties[subPropName] = subProp
 							}
 						}
 					}
@@ -450,10 +462,9 @@ func (c *Converter) createRequestTemplate(path, method string, operation *openap
 				// In MCP, we just reference the scheme by ID.
 				// The actual application of security (e.g., adding headers)
 				// would be handled by the MCP server runtime based on this ID.
-				template.Security = &models.ToolSecurityRequirement{
+				template.Security = append(template.Security, models.ToolSecurityRequirement{
 					ID: schemeName,
-				}
-				break
+				})
 			}
 		}
 	}
@@ -515,7 +526,7 @@ func (c *Converter) createResponseTemplate(operation *openapi3.Operation) (*mode
 		// Generate field descriptions using recursive function
 		if schema.Type == "array" && schema.Items != nil && schema.Items.Value != nil {
 			// Handle array type
-			prependBody.WriteString(fmt.Sprintf("- **items**: Array of items (Type: array)\n"))
+			prependBody.WriteString("- **items**: Array of items (Type: array)\n")
 			// Process array items recursively
 			c.processSchemaProperties(&prependBody, schema.Items.Value, "items", 1, 10)
 		} else if schema.Type == "object" && len(schema.Properties) > 0 {
@@ -569,10 +580,10 @@ func (c *Converter) processSchemaProperties(prependBody *strings.Builder, schema
 		arrayItemSchema := schema.Items.Value
 
 		// Include the array description if available
-		arrayDesc := schema.Description
-		if arrayDesc == "" {
-			arrayDesc = fmt.Sprintf("Array of %s", arrayItemSchema.Type)
-		}
+		// arrayDesc := schema.Description
+		// if arrayDesc == "" {
+		// 	arrayDesc = fmt.Sprintf("Array of %s", arrayItemSchema.Type)
+		// }
 
 		// If array items are objects, describe their properties
 		if arrayItemSchema.Type == "object" && len(arrayItemSchema.Properties) > 0 {
@@ -592,9 +603,9 @@ func (c *Converter) processSchemaProperties(prependBody *strings.Builder, schema
 
 				// Write the property description
 				propPath := fmt.Sprintf("%s[].%s", path, propName)
-				prependBody.WriteString(fmt.Sprintf("%s- **%s**: %s", indent, propPath, propRef.Value.Description))
+				fmt.Fprintf(prependBody, "%s- **%s**: %s", indent, propPath, propRef.Value.Description)
 				if propRef.Value.Type != "" {
-					prependBody.WriteString(fmt.Sprintf(" (Type: %s)", propRef.Value.Type))
+					fmt.Fprintf(prependBody, " (Type: %s)", propRef.Value.Type)
 				}
 				prependBody.WriteString("\n")
 
@@ -603,7 +614,7 @@ func (c *Converter) processSchemaProperties(prependBody *strings.Builder, schema
 			}
 		} else if arrayItemSchema.Type != "" {
 			// If array items are not objects, just describe the array item type
-			prependBody.WriteString(fmt.Sprintf("%s- **%s[]**: Items of type %s\n", indent, path, arrayItemSchema.Type))
+			fmt.Fprintf(prependBody, "%s- **%s[]**: Items of type %s\n", indent, path, arrayItemSchema.Type)
 		}
 		return
 	}
@@ -626,9 +637,9 @@ func (c *Converter) processSchemaProperties(prependBody *strings.Builder, schema
 
 			// Write the property description
 			propPath := fmt.Sprintf("%s.%s", path, propName)
-			prependBody.WriteString(fmt.Sprintf("%s- **%s**: %s", indent, propPath, propRef.Value.Description))
+			fmt.Fprintf(prependBody, "%s- **%s**: %s", indent, propPath, propRef.Value.Description)
 			if propRef.Value.Type != "" {
-				prependBody.WriteString(fmt.Sprintf(" (Type: %s)", propRef.Value.Type))
+				fmt.Fprintf(prependBody, " (Type: %s)", propRef.Value.Type)
 			}
 			prependBody.WriteString("\n")
 
@@ -651,10 +662,5 @@ func getDescription(operation *openapi3.Operation) string {
 
 // contains checks if a string slice contains a string
 func contains(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, str)
 }

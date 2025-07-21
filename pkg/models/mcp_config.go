@@ -8,10 +8,10 @@ type MCPConfig struct {
 
 // ServerConfig represents the MCP server configuration
 type ServerConfig struct {
-	Name            string                 `yaml:"name"`
-	Config          map[string]interface{} `yaml:"config,omitempty"`
-	AllowTools      []string               `yaml:"allowTools,omitempty"`
-	SecuritySchemes []SecurityScheme       `yaml:"securitySchemes,omitempty"`
+	Name            string           `yaml:"name"`
+	Config          map[string]any   `yaml:"config,omitempty"`
+	AllowTools      []string         `yaml:"allowTools,omitempty"`
+	SecuritySchemes []SecurityScheme `yaml:"securitySchemes,omitempty"`
 }
 
 // SecurityScheme defines a security scheme that can be used by the tools.
@@ -36,27 +36,27 @@ type Tool struct {
 
 // Arg represents an MCP tool argument
 type Arg struct {
-	Name        string                 `yaml:"name"`
-	Description string                 `yaml:"description"`
-	Type        string                 `yaml:"type,omitempty"`
-	Required    bool                   `yaml:"required,omitempty"`
-	Default     interface{}            `yaml:"default,omitempty"`
-	Enum        []interface{}          `yaml:"enum,omitempty"`
-	Items       map[string]interface{} `yaml:"items,omitempty"`
-	Properties  map[string]interface{} `yaml:"properties,omitempty"`
-	Position    string                 `yaml:"position,omitempty"`
+	Name        string         `yaml:"name"`
+	Description string         `yaml:"description"`
+	Type        string         `yaml:"type,omitempty"`
+	Required    bool           `yaml:"required,omitempty"`
+	Default     any            `yaml:"default,omitempty"`
+	Enum        []any          `yaml:"enum,omitempty"`
+	Items       map[string]any `yaml:"items,omitempty"`
+	Properties  map[string]any `yaml:"properties,omitempty"`
+	Position    string         `yaml:"position,omitempty"`
 }
 
 // RequestTemplate represents the MCP request template
 type RequestTemplate struct {
-	URL            string                   `yaml:"url"`
-	Method         string                   `yaml:"method"`
-	Headers        []Header                 `yaml:"headers,omitempty"`
-	Body           string                   `yaml:"body,omitempty"`
-	ArgsToJsonBody bool                     `yaml:"argsToJsonBody,omitempty"`
-	ArgsToUrlParam bool                     `yaml:"argsToUrlParam,omitempty"`
-	ArgsToFormBody bool                     `yaml:"argsToFormBody,omitempty"`
-	Security       *ToolSecurityRequirement `yaml:"security,omitempty"`
+	URL            string                    `yaml:"url"`
+	Method         string                    `yaml:"method"`
+	Headers        []Header                  `yaml:"headers,omitempty"`
+	Body           string                    `yaml:"body,omitempty"`
+	ArgsToJsonBody bool                      `yaml:"argsToJsonBody,omitempty"`
+	ArgsToUrlParam bool                      `yaml:"argsToUrlParam,omitempty"`
+	ArgsToFormBody bool                      `yaml:"argsToFormBody,omitempty"`
+	Security       []ToolSecurityRequirement `yaml:"security,omitempty"`
 }
 
 // ToolSecurityRequirement specifies a security scheme requirement for a tool.
