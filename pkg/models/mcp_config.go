@@ -26,12 +26,13 @@ type SecurityScheme struct {
 
 // Tool represents an MCP tool configuration
 type Tool struct {
-	Name             string                   `yaml:"name"`
-	Description      string                   `yaml:"description"`
-	Args             []Arg                    `yaml:"args"`
-	RequestTemplate  RequestTemplate          `yaml:"requestTemplate"`
-	ResponseTemplate ResponseTemplate         `yaml:"responseTemplate"`
-	Security         *ToolSecurityRequirement `yaml:"security,omitempty"`
+	Name                  string                   `yaml:"name"`
+	Description           string                   `yaml:"description"`
+	Args                  []Arg                    `yaml:"args"`
+	RequestTemplate       RequestTemplate          `yaml:"requestTemplate"`
+	ResponseTemplate      ResponseTemplate         `yaml:"responseTemplate"`
+	ErrorResponseTemplate string                   `yaml:"errorResponseTemplate"`
+	Security              *ToolSecurityRequirement `yaml:"security,omitempty"`
 }
 
 // Arg represents an MCP tool argument
