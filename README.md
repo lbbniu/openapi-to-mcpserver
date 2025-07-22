@@ -413,10 +413,10 @@ tools:
       url: /protected_resource # Actual URL depends on your server config in OpenAPI
       method: GET
       security:
-        - id: ApiKeyAuth
+        id: ApiKeyAuth
     # ... responseTemplate ...
 ```
-If an operation specifies multiple security schemes (e.g., BearerAuth OR ApiKeyAuth), all will be listed under `requestTemplate.security`. The MCP server runtime would then handle the logic of which scheme to use.
+
 
 ### Template Overrides for Security
 

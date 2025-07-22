@@ -23,7 +23,7 @@ tools:
       url: http://localhost:8080/v1/apikey_header_resource
       method: GET
       security:
-        - id: ApiKeyHeaderAuth
+        id: ApiKeyHeaderAuth
     responseTemplate: {}
   - name: getApiKeyQueryResource
     description: Resource requiring API Key in Query
@@ -32,7 +32,7 @@ tools:
       url: http://localhost:8080/v1/apikey_query_resource
       method: GET
       security:
-        - id: ApiKeyQueryAuth
+        id: ApiKeyQueryAuth
     responseTemplate: {}
   - name: getBasicAuthResource
     description: Resource requiring Basic Auth
@@ -41,7 +41,7 @@ tools:
       url: http://localhost:8080/v1/basic_auth_resource
       method: GET
       security:
-        - id: BasicAuth
+        id: BasicAuth
     responseTemplate: {}
   - name: getBearerAuthResource
     description: Resource requiring Bearer Auth
@@ -50,7 +50,7 @@ tools:
       url: http://localhost:8080/v1/bearer_auth_resource
       method: GET
       security:
-        - id: BearerAuth
+        id: BearerAuth
     responseTemplate: {}
   - name: getMultiAuthResource
     description: Resource allowing multiple auth types (Bearer OR ApiKeyHeader)
@@ -59,8 +59,7 @@ tools:
       url: http://localhost:8080/v1/multi_auth_resource
       method: GET
       security:
-        - id: BearerAuth
-        - id: ApiKeyHeaderAuth
+        id: BearerAuth
     responseTemplate: {}
   - name: getNoAuthResource
     description: Resource requiring no authentication

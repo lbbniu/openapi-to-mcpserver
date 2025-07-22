@@ -31,7 +31,7 @@ type Tool struct {
 	Args                  []Arg                    `yaml:"args"`
 	RequestTemplate       RequestTemplate          `yaml:"requestTemplate"`
 	ResponseTemplate      ResponseTemplate         `yaml:"responseTemplate"`
-	ErrorResponseTemplate string                   `yaml:"errorResponseTemplate"`
+	ErrorResponseTemplate *string                  `yaml:"errorResponseTemplate,omitempty"`
 	Security              *ToolSecurityRequirement `yaml:"security,omitempty"`
 }
 
@@ -50,14 +50,14 @@ type Arg struct {
 
 // RequestTemplate represents the MCP request template
 type RequestTemplate struct {
-	URL            string                    `yaml:"url"`
-	Method         string                    `yaml:"method"`
-	Headers        []Header                  `yaml:"headers,omitempty"`
-	Body           string                    `yaml:"body,omitempty"`
-	ArgsToJsonBody bool                      `yaml:"argsToJsonBody,omitempty"`
-	ArgsToUrlParam bool                      `yaml:"argsToUrlParam,omitempty"`
-	ArgsToFormBody bool                      `yaml:"argsToFormBody,omitempty"`
-	Security       []ToolSecurityRequirement `yaml:"security,omitempty"`
+	URL            string                   `yaml:"url"`
+	Method         string                   `yaml:"method"`
+	Headers        []Header                 `yaml:"headers,omitempty"`
+	Body           string                   `yaml:"body,omitempty"`
+	ArgsToJsonBody bool                     `yaml:"argsToJsonBody,omitempty"`
+	ArgsToUrlParam bool                     `yaml:"argsToUrlParam,omitempty"`
+	ArgsToFormBody bool                     `yaml:"argsToFormBody,omitempty"`
+	Security       *ToolSecurityRequirement `yaml:"security,omitempty"`
 }
 
 // ToolSecurityRequirement specifies a security scheme requirement for a tool.

@@ -458,15 +458,21 @@ func (c *Converter) createRequestTemplate(path, method string, operation *openap
 	}
 
 	// Process operation-level security requirements
+	securitySchemeFound := false
 	if operation.Security != nil {
 		for _, securityRequirement := range *operation.Security {
+			if securitySchemeFound {
+				break
+			}
 			for schemeName := range securityRequirement {
 				// In MCP, we just reference the scheme by ID.
 				// The actual application of security (e.g., adding headers)
 				// would be handled by the MCP server runtime based on this ID.
-				template.Security = append(template.Security, models.ToolSecurityRequirement{
+				template.Security = &models.ToolSecurityRequirement{
 					ID: schemeName,
-				})
+				}
+				securitySchemeFound = true
+				break
 			}
 		}
 	}
