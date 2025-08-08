@@ -2,8 +2,21 @@ package models
 
 // MCPConfig represents the top-level MCP server configuration
 type MCPConfig struct {
-	Server ServerConfig `yaml:"server"`
-	Tools  []Tool       `yaml:"tools,omitempty"`
+	ToolSet *ToolSetConfig `yaml:"toolSet,omitempty"`
+	Server  ServerConfig   `yaml:"server,omitempty"`
+	Tools   []Tool         `yaml:"tools,omitempty"`
+}
+
+// ToolSetConfig defines the configuration for a toolset.
+type ToolSetConfig struct {
+	Name        string             `json:"name"`
+	ServerTools []ServerToolConfig `json:"serverTools"`
+}
+
+// ServerToolConfig specifies which tools from a server to include in a toolset.
+type ServerToolConfig struct {
+	ServerName string   `json:"serverName"`
+	Tools      []string `json:"tools"`
 }
 
 // ServerConfig represents the MCP server configuration
