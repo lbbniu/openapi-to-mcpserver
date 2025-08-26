@@ -42,10 +42,16 @@ func (c *Converter) Convert() (*models.MCPConfig, error) {
 		return nil, fmt.Errorf("no OpenAPI document loaded")
 	}
 
+	var baseURL string
+	doc := c.parser.GetDocument()
+	if servers := doc.Servers; len(servers) > 0 {
+		baseURL = servers[0].URL
+	}
 	// Create the MCP configuration
 	config := &models.MCPConfig{
 		Server: models.ServerConfig{
-			Name:            c.options.ServerName,
+			Name:            doc.Info.Title + " - " + doc.Info.Description,
+			BaseURL:         baseURL,
 			Config:          c.options.ServerConfig,
 			SecuritySchemes: []models.SecurityScheme{},
 		},
@@ -331,7 +337,7 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 
 // convertRequestBody converts an OpenAPI request body to MCP arguments
 func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) ([]models.Arg, error) {
-	args := []models.Arg{}
+	var args []models.Arg
 
 	if requestBodyRef == nil || requestBodyRef.Value == nil {
 		return args, nil
@@ -358,9 +364,13 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 						continue
 					}
 
+					description := propRef.Value.Description
+					if propRef.Value.Title != "" && description == "" {
+						description = propRef.Value.Title
+					}
 					arg := models.Arg{
 						Name:        propName,
-						Description: propRef.Value.Description,
+						Description: description,
 						Type:        propRef.Value.Type,
 						Required:    contains(schema.Required, propName),
 						Position:    "body", // Set position to "body" for request body parameters
@@ -442,17 +452,10 @@ func (c *Converter) allOfHandle(schemaRef *openapi3.SchemaRef) map[string]interf
 // createRequestTemplate creates an MCP request template from an OpenAPI operation
 func (c *Converter) createRequestTemplate(path, method string, operation *openapi3.Operation) (*models.RequestTemplate, error) {
 	// Get the server URL from the OpenAPI specification
-	var serverURL string
-	if servers := c.parser.GetDocument().Servers; len(servers) > 0 {
-		serverURL = servers[0].URL
-	}
-
-	// Remove trailing slash from server URL if present
-	serverURL = strings.TrimSuffix(serverURL, "/")
 
 	// Create the request template
 	template := &models.RequestTemplate{
-		URL:     serverURL + path,
+		URL:     path,
 		Method:  strings.ToUpper(method),
 		Headers: []models.Header{},
 	}
@@ -567,6 +570,7 @@ func (c *Converter) createResponseTemplate(operation *openapi3.Operation) (*mode
 
 	prependBody.WriteString("\n## Original Response\n\n")
 	template.PrependBody = prependBody.String()
+	template.PrependBody = ""
 
 	return template, nil
 }
