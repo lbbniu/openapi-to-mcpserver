@@ -42,6 +42,7 @@ type SecurityScheme struct {
 type Tool struct {
 	Name                  string                   `yaml:"name" json:"name"`
 	Description           string                   `yaml:"description" json:"description"`
+	Annotations           map[string]any           `yaml:"annotations,omitempty" json:"annotations,omitempty"`
 	Args                  []Arg                    `yaml:"args" json:"args"`
 	RequestTemplate       RequestTemplate          `yaml:"requestTemplate" json:"requestTemplate,omitempty"`
 	ResponseTemplate      ResponseTemplate         `yaml:"responseTemplate" json:"responseTemplate,omitempty"`

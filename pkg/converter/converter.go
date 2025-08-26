@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"slices"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/tidwall/gjson"
 	"gopkg.in/yaml.v3"
 
 	"github.com/higress-group/openapi-to-mcpserver/pkg/models"
@@ -47,10 +49,17 @@ func (c *Converter) Convert() (*models.MCPConfig, error) {
 	if servers := doc.Servers; len(servers) > 0 {
 		baseURL = servers[0].URL
 	}
+	name := "openapi-server"
+	if c.options.ServerName != "" {
+		name = c.options.ServerName
+	}
+	if doc.Info != nil {
+		name = doc.Info.Title + " - " + doc.Info.Description
+	}
 	// Create the MCP configuration
 	config := &models.MCPConfig{
 		Server: models.ServerConfig{
-			Name:            doc.Info.Title + " - " + doc.Info.Description,
+			Name:            name,
 			BaseURL:         baseURL,
 			Config:          c.options.ServerConfig,
 			SecuritySchemes: []models.SecurityScheme{},
@@ -234,11 +243,20 @@ func (c *Converter) convertOperation(path, method string, operation *openapi3.Op
 		toolName = c.options.ToolNamePrefix + toolName
 	}
 
+	result := gjson.GetBytes(c.parser.GetData(), "paths."+path+"."+method+".annotations")
+	annotations := make(map[string]any)
+	if result.Exists() {
+		if err := json.Unmarshal([]byte(result.Raw), &annotations); err != nil {
+			return nil, fmt.Errorf("failed to parse annotations for %s %s: %w", method, path, err)
+		}
+	}
+
 	// Create the tool
 	tool := &models.Tool{
 		Name:        toolName,
 		Description: getDescription(operation),
 		Args:        []models.Arg{},
+		Annotations: annotations,
 	}
 
 	// Convert parameters to arguments

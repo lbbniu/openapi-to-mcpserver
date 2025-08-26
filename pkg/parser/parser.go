@@ -13,6 +13,7 @@ import (
 // Parser represents an OpenAPI parser
 type Parser struct {
 	doc              *openapi3.T
+	data             []byte
 	ValidateDocument bool
 }
 
@@ -61,8 +62,13 @@ func (p *Parser) Parse(data []byte) error {
 		}
 	}
 
+	p.data = data
 	p.doc = doc
 	return nil
+}
+
+func (p *Parser) GetData() []byte {
+	return p.data
 }
 
 // GetDocument returns the parsed OpenAPI document
