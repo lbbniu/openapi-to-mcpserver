@@ -469,6 +469,9 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 
 						if propRef.Value.Items.Value.Type == "object" && propRef.Value.Items.Value.Properties != nil {
 							arg.Items["properties"] = propRef.Value.Items.Value.Properties
+							if propRef.Value.Items.Value.Required != nil {
+								arg.Items["required"] = propRef.Value.Items.Value.Required
+							}
 						}
 						if propRef.Value.Items.Value.Default != nil {
 							arg.Items["default"] = propRef.Value.Items.Value.Default
@@ -482,9 +485,7 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 							if subPropRef.Value != nil {
 								subProp := make(map[string]any)
 								subProp["type"] = subPropRef.Value.Type
-								if subPropRef.Value.Title != "" {
-									subProp["title"] = subPropRef.Value.Title
-								}
+								subProp["title"] = subPropRef.Value.Title
 								if subPropRef.Value.Description != "" {
 									subProp["description"] = subPropRef.Value.Description
 								}
