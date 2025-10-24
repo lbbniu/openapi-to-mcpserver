@@ -61,6 +61,7 @@ type Arg struct {
 	Items       map[string]any `yaml:"items,omitempty" json:"items,omitempty"`
 	Properties  map[string]any `yaml:"properties,omitempty" json:"properties,omitempty"`
 	Position    string         `yaml:"position,omitempty" json:"position,omitempty"`
+	Enabled     bool           `yaml:"enabled,omitempty" json:"enabled,omitempty"`
 }
 
 // RequestTemplate represents the MCP request template

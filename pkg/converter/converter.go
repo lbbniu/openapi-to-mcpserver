@@ -310,6 +310,7 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 			Description: param.Description,
 			Required:    param.Required,
 			Position:    param.In, // Set position based on parameter location (query, path, header, cookie)
+			Enabled:     true,
 		}
 
 		// Set the type based on the schema
@@ -392,6 +393,7 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 						Type:        propRef.Value.Type,
 						Required:    contains(schema.Required, propName),
 						Position:    "body", // Set position to "body" for request body parameters
+						Enabled:     true,
 					}
 
 					// Handle enum values
