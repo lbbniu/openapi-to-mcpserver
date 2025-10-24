@@ -742,10 +742,10 @@ func (c *Converter) processSchemaProperties(prependBody *strings.Builder, schema
 
 // getDescription returns a description for an operation
 func getDescription(operation *openapi3.Operation) string {
+	if operation.Description != "" {
+		return operation.Description
+	}
 	if operation.Summary != "" {
-		if operation.Description != "" {
-			return fmt.Sprintf("%s - %s", operation.Summary, operation.Description)
-		}
 		return operation.Summary
 	}
 	return operation.Description
