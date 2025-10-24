@@ -325,6 +325,11 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 				arg.Enum = schema.Enum
 			}
 
+			// 默认值处理
+			if schema.Default != nil {
+				arg.Default = schema.Default
+			}
+
 			// Handle array type
 			if schema.Type == "array" && schema.Items != nil && schema.Items.Value != nil {
 				arg.Items = map[string]any{
