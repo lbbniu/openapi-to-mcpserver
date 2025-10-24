@@ -401,6 +401,11 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 						arg.Enum = propRef.Value.Enum
 					}
 
+					// 默认值处理
+					if propRef.Value.Default != nil {
+						arg.Default = propRef.Value.Default
+					}
+
 					// Handle array type
 					if propRef.Value.Type == "array" && propRef.Value.Items != nil && propRef.Value.Items.Value != nil {
 						arg.Items = map[string]any{
