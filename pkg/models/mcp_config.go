@@ -53,6 +53,7 @@ type Tool struct {
 // Arg represents an MCP tool argument
 type Arg struct {
 	Name        string         `yaml:"name" json:"name"`
+	Title       string         `yaml:"title,omitempty" json:"title,omitempty"`
 	Description string         `yaml:"description" json:"description"`
 	Type        string         `yaml:"type,omitempty" json:"type,omitempty"`
 	Required    bool           `yaml:"required,omitempty" json:"required,omitempty"`
