@@ -243,7 +243,9 @@ func (c *Converter) convertOperation(path, method string, operation *openapi3.Op
 		toolName = c.options.ToolNamePrefix + toolName
 	}
 
-	result := gjson.GetBytes(c.parser.GetData(), "paths."+path+"."+method+".annotations")
+	// 特殊地址处理
+	path = strings.ReplaceAll(path, ".", "\\.")
+	result := gjson.ParseBytes(c.parser.GetData()).Get("paths").Get(path).Get(method).Get("annotations")
 	annotations := make(map[string]any)
 	if result.Exists() {
 		if err := json.Unmarshal([]byte(result.Raw), &annotations); err != nil {
@@ -374,7 +376,10 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 						if propRef.Value.Default != nil {
 							properties["default"] = propRef.Value.Default
 						}
-						// -----
+						if propRef.Value.Required != nil {
+							properties["required"] = propRef.Value.Required
+						}
+						// ----
 
 						if propRef.Value.Description != "" {
 							properties["description"] = propRef.Value.Description
@@ -486,6 +491,9 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 								}
 								if subPropRef.Value.Default != nil {
 									subProp["default"] = subPropRef.Value.Default
+								}
+								if subPropRef.Value.Required != nil {
+									subProp["required"] = propRef.Value.Required
 								}
 								arg.Properties[subPropName] = subProp
 							}
