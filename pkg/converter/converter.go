@@ -358,6 +358,7 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 			// Handle object type
 			if schema.Type == "object" && len(schema.Properties) > 0 {
 				arg.Properties = make(map[string]any)
+				arg.PropsRequired = schema.Required
 				for propName, propRef := range schema.Properties {
 					if propRef.Value != nil {
 						properties := map[string]any{
@@ -476,6 +477,7 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 					// Handle object type
 					if propRef.Value.Type == "object" && len(propRef.Value.Properties) > 0 {
 						arg.Properties = make(map[string]any)
+						arg.PropsRequired = propRef.Value.Required
 						for subPropName, subPropRef := range propRef.Value.Properties {
 							if subPropRef.Value != nil {
 								subProp := make(map[string]any)
