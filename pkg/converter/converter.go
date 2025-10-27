@@ -297,7 +297,52 @@ func (c *Converter) convertOperation(path, method string, operation *openapi3.Op
 	return tool, nil
 }
 
-func (c *Converter) convertObjectProperties(position string, schema *openapi3.Schema) map[string]models.Arg {
+func (c *Converter) convertSchemaToArg(position string, rootPropName string, required []string, schema *openapi3.Schema) models.Arg {
+	arg := models.Arg{
+		Name:        rootPropName,
+		Title:       schema.Title,
+		Description: schema.Description,
+		Type:        schema.Type,
+		Required:    contains(required, rootPropName),
+		Position:    position, // Set position to "body" for request body parameters
+		Enabled:     true,
+	}
+
+	// Handle enum values
+	if len(schema.Enum) > 0 {
+		arg.Enum = schema.Enum
+	}
+
+	// 默认值处理
+	if schema.Default != nil {
+		arg.Default = schema.Default
+	}
+
+	if schema.Type == "array" {
+		if schema.MinItems > 0 {
+			arg.MinItems = schema.MinItems
+		}
+		if schema.Items != nil && schema.Items.Value != nil {
+			itemsArg := c.convertSchemaToArg(arg.Position, "", schema.Required, schema.Items.Value)
+			arg.Items = &itemsArg
+		}
+	}
+
+	if schema.Type == "object" {
+		properties := make(map[string]models.Arg)
+		for propName, propRef := range schema.Properties {
+			if propRef.Value == nil {
+				continue
+			}
+			propArg := c.convertSchemaToArg(arg.Position, propName, schema.Required, propRef.Value)
+			properties[propName] = propArg
+		}
+		arg.Properties = properties
+	}
+	return arg
+}
+
+func (c *Converter) convertPropertiesToArg(position string, schema *openapi3.Schema) map[string]models.Arg {
 	properties := make(map[string]models.Arg)
 	for propName, propRef := range schema.Properties {
 		if propRef.Value == nil {
@@ -334,7 +379,7 @@ func (c *Converter) convertObjectProperties(position string, schema *openapi3.Sc
 				arg.Items.MinItems = propRef.Value.Items.Value.MinItems
 			}
 			if propRef.Value.Items.Value.Type == "object" && propRef.Value.Items.Value.Properties != nil {
-				arg.Items.Properties = c.convertObjectProperties(arg.Position, propRef.Value.Items.Value)
+				arg.Items.Properties = c.convertPropertiesToArg(arg.Position, propRef.Value.Items.Value)
 			}
 			if propRef.Value.Items.Value.Default != nil {
 				arg.Items.Default = propRef.Value.Items.Value.Default
@@ -343,7 +388,7 @@ func (c *Converter) convertObjectProperties(position string, schema *openapi3.Sc
 
 		// Handle object type
 		if propRef.Value.Type == "object" && len(propRef.Value.Properties) > 0 {
-			arg.Properties = c.convertObjectProperties(arg.Position, propRef.Value)
+			arg.Properties = c.convertPropertiesToArg(arg.Position, propRef.Value)
 		}
 
 		properties[propName] = arg
@@ -401,8 +446,7 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 					arg.Items.MinItems = schema.Items.Value.MinItems
 				}
 				if schema.Items.Value.Type == "object" && schema.Items.Value.Properties != nil {
-					// todo：arg.Items.Properties = schema.Items.Value.Properties
-					arg.Items.Properties = c.convertObjectProperties(arg.Position, schema.Items.Value)
+					arg.Items.Properties = c.convertPropertiesToArg(arg.Position, schema.Items.Value)
 				}
 				if schema.Items.Value.Default != nil {
 					arg.Items.Default = schema.Items.Value.Default
@@ -411,37 +455,7 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 
 			// Handle object type
 			if schema.Type == "object" && len(schema.Properties) > 0 {
-				arg.Properties = make(map[string]models.Arg)
-				arg.Properties = c.convertObjectProperties(arg.Position, schema)
-				//for propName, propRef := range schema.Properties {
-				//	if propRef.Value != nil {
-				//		properties := map[string]any{
-				//			"type": propRef.Value.Type,
-				//		}
-				//		// -----
-				//		if propRef.Value.Title != "" {
-				//			properties["title"] = propRef.Value.Title
-				//		}
-				//		if propRef.Value.Description != "" {
-				//			properties["description"] = propRef.Value.Description
-				//		}
-				//		if propRef.Value.Enum != nil {
-				//			properties["enum"] = propRef.Value.Enum
-				//		}
-				//		if propRef.Value.Default != nil {
-				//			properties["default"] = propRef.Value.Default
-				//		}
-				//		if propRef.Value.Required != nil {
-				//			properties["required"] = propRef.Value.Required
-				//		}
-				//		// ----
-				//
-				//		if propRef.Value.Description != "" {
-				//			properties["description"] = propRef.Value.Description
-				//		}
-				//		arg.Properties[propName] = properties
-				//	}
-				//}
+				arg.Properties = c.convertPropertiesToArg(arg.Position, schema)
 			}
 		}
 
@@ -479,90 +493,7 @@ func (c *Converter) convertRequestBody(requestBodyRef *openapi3.RequestBodyRef) 
 					if propRef.Value == nil {
 						continue
 					}
-
-					//description := propRef.Value.Description
-					//if propRef.Value.Title != "" && description == "" {
-					//	description = propRef.Value.Title
-					//}
-					arg := models.Arg{
-						Name:        propName,
-						Title:       propRef.Value.Title,
-						Description: propRef.Value.Description,
-						Type:        propRef.Value.Type,
-						Required:    contains(schema.Required, propName),
-						Position:    "body", // Set position to "body" for request body parameters
-						Enabled:     true,
-					}
-
-					// Handle enum values
-					if len(propRef.Value.Enum) > 0 {
-						arg.Enum = propRef.Value.Enum
-					}
-
-					// 默认值处理
-					if propRef.Value.Default != nil {
-						arg.Default = propRef.Value.Default
-					}
-
-					// Handle array type
-					if propRef.Value.Type == "array" && propRef.Value.Items != nil && propRef.Value.Items.Value != nil {
-						arg.Items = &models.Arg{
-							Type: propRef.Value.Items.Value.Type,
-						}
-						// -----
-						if propRef.Value.Items.Value.Title != "" {
-							arg.Items.Title = propRef.Value.Items.Value.Title
-						}
-						if propRef.Value.Items.Value.Description != "" {
-							arg.Items.Description = propRef.Value.Items.Value.Description
-						}
-						if propRef.Value.Items.Value.MinItems > 0 {
-							arg.Items.MinItems = propRef.Value.Items.Value.MinItems
-						}
-						// -----
-
-						if propRef.Value.Items.Value.Type == "object" && propRef.Value.Items.Value.Properties != nil {
-							// todo: arg.Items.Properties = propRef.Value.Items.Value.Properties
-							//if propRef.Value.Items.Value.Required != nil {
-							//	arg.Items.Required = propRef.Value.Items.Value.Required
-							//}
-							arg.Items.Properties = c.convertObjectProperties(arg.Position, propRef.Value.Items.Value)
-						}
-						if propRef.Value.Items.Value.Default != nil {
-							arg.Items.Default = propRef.Value.Items.Value.Default
-						}
-					}
-					// Handle object type
-					if propRef.Value.Type == "object" && len(propRef.Value.Properties) > 0 {
-						// todo arg.Properties = make(map[string]any)
-						arg.Properties = c.convertObjectProperties(arg.Position, propRef.Value)
-						//for subPropName, subPropRef := range propRef.Value.Properties {
-						//	if subPropRef.Value != nil {
-						//		subProp := make(map[string]any)
-						//		subProp["type"] = subPropRef.Value.Type
-						//		subProp["title"] = subPropRef.Value.Title
-						//		if subPropRef.Value.Description != "" {
-						//			subProp["description"] = subPropRef.Value.Description
-						//		}
-						//		if subPropRef.Value.Enum != nil {
-						//			subProp["enum"] = subPropRef.Value.Enum
-						//		}
-						//		if subPropRef.Value.Default != nil {
-						//			subProp["default"] = subPropRef.Value.Default
-						//		}
-						//		if subPropRef.Value.Required != nil {
-						//			subProp["required"] = propRef.Value.Required
-						//		}
-						//		arg.Properties[subPropName] = subProp
-						//	}
-						//}
-					}
-					// todo: Handle allOf
-					//if propRef.Value.Type == "" && len(propRef.Value.AllOf) == 1 {
-					//	arg.Type = "object"
-					//	arg.Properties = c.allOfHandle(propRef.Value.AllOf[0])
-					//}
-
+					arg := c.convertSchemaToArg("body", propName, schema.Required, propRef.Value)
 					args = append(args, arg)
 				}
 			}
