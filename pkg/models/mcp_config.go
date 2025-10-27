@@ -52,18 +52,22 @@ type Tool struct {
 
 // Arg represents an MCP tool argument
 type Arg struct {
-	Name          string         `yaml:"name" json:"name"`
-	Title         string         `yaml:"title,omitempty" json:"title,omitempty"`
-	Description   string         `yaml:"description" json:"description"`
-	Type          string         `yaml:"type,omitempty" json:"type,omitempty"`
-	Required      bool           `yaml:"required,omitempty" json:"required,omitempty"`
-	Default       any            `yaml:"default,omitempty" json:"default,omitempty"`
-	Enum          []any          `yaml:"enum,omitempty" json:"enum,omitempty"`
-	Items         map[string]any `yaml:"items,omitempty" json:"items,omitempty"`
-	Properties    map[string]any `yaml:"properties,omitempty" json:"properties,omitempty"`
-	PropsRequired []string       `yaml:"propsRequired,omitempty" json:"propsRequired,omitempty"`
-	Position      string         `yaml:"position,omitempty" json:"position,omitempty"`
-	Enabled       bool           `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+	Name        string `yaml:"name" json:"name"`
+	Title       string `yaml:"title,omitempty" json:"title,omitempty"`
+	Description string `yaml:"description" json:"description"`
+	Type        string `yaml:"type,omitempty" json:"type,omitempty"`
+	Required    bool   `yaml:"required,omitempty" json:"required,omitempty"`
+	Default     any    `yaml:"default,omitempty" json:"default,omitempty"`
+	Enum        []any  `yaml:"enum,omitempty" json:"enum,omitempty"`
+
+	// array specific
+	MinItems uint64  `json:"minItems,omitempty" yaml:"minItems,omitempty"`
+	MaxItems *uint64 `json:"maxItems,omitempty" yaml:"maxItems,omitempty"`
+	Items    *Arg    `yaml:"items,omitempty" json:"items,omitempty"`
+
+	Properties map[string]Arg `yaml:"properties,omitempty" json:"properties,omitempty"`
+	Position   string         `yaml:"position,omitempty" json:"position,omitempty"`
+	Enabled    bool           `yaml:"enabled,omitempty" json:"enabled,omitempty"`
 }
 
 // RequestTemplate represents the MCP request template
