@@ -244,8 +244,8 @@ func (c *Converter) convertOperation(path, method string, operation *openapi3.Op
 	}
 
 	// 特殊地址处理
-	path = strings.ReplaceAll(path, ".", "\\.")
-	result := gjson.ParseBytes(c.parser.GetData()).Get("paths").Get(path).Get(method).Get("annotations")
+	jsonPath := strings.ReplaceAll(path, ".", "\\.")
+	result := gjson.ParseBytes(c.parser.GetData()).Get("paths").Get(jsonPath).Get(method).Get("annotations")
 	annotations := make(map[string]any)
 	if result.Exists() {
 		if err := json.Unmarshal([]byte(result.Raw), &annotations); err != nil {
