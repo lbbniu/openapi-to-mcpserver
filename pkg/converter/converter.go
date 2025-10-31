@@ -412,6 +412,11 @@ func (c *Converter) convertParameters(parameters openapi3.Parameters) ([]models.
 			Position:    param.In, // Set position based on parameter location (query, path, header, cookie)
 			Enabled:     true,
 		}
+		// query参数解析类型
+		typ, ok := param.Extensions["type"].(string)
+		if ok {
+			arg.Type = typ
+		}
 
 		// Set the type based on the schema
 		if param.Schema != nil && param.Schema.Value != nil {
